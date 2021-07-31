@@ -6,8 +6,17 @@ class UserSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields=('id','first_name','email','username','image','is_driver','mobile_no')
 
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Reviews
+        fields = "__all__"
+
+
 class CarSerializer(serializers.ModelSerializer):
     car_driver = serializers.SerializerMethodField(read_only=True)
+    car_review = ReviewSerializer(many=True)
     class Meta:
         model = Cars
         fields = "__all__"

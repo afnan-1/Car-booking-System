@@ -19,6 +19,9 @@ class Cars(BaseModel):
     model = models.CharField(max_length=100,null=True,blank=True)
     booked = models.BooleanField(default=False)
     image = models.ImageField(null=True,blank=True)
+    rating = models.DecimalField(
+        max_digits=7, decimal_places=2, null=True, blank=True)
+    numReviews = models.IntegerField(null=True, blank=True, default=0)
 
     def __str__(self):
         return self.name

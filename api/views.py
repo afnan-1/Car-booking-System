@@ -13,6 +13,14 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 # Create your views here.
 
+@api_view(['GET'])
+def car_details(request,id):
+    car = Cars.objects.get(id=id)
+    serializer = CarSerializer(car,many=False)
+    return Response(serializer.data)
+
+
+
 @api_view(['GET',])
 def list_cars(request):
     cars = Cars.objects.all()
@@ -87,6 +95,7 @@ def registerUser(request):
             username=data['email'],
             email=data['email'],
             password=make_password(data['password']),
+            mobile_no=data['mobile_no'],
             is_driver=data['is_driver']
         )
         user.save()
