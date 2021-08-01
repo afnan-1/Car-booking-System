@@ -10,6 +10,7 @@ from .models import *
 from django.contrib.auth.hashers import make_password
 from .serializers import UserSerializer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from django.db.models import Q
 
 # Create your views here.
 
@@ -23,8 +24,13 @@ def car_details(request,id):
 
 @api_view(['GET',])
 def list_cars(request):
-    cars = Cars.objects.all()
-    serializer = CarSerializer(cars,many=True)
+    query = request.query_params.get('keyword')
+    if query == None:
+        query = ''
+
+    cars = Cars.objects.filter(
+       Q(name__icontains=query)|Q(city__icontains=query), booked=False).order_by('-created_at')
+    serializer = CarSerializer(cars,many=True)  
     return Response(serializer.data)
 
 
@@ -40,6 +46,8 @@ def book_car(request,id):
     try:
         data = request.data
         car = Cars.objects.get(id=id)
+        if car.booked:
+            return Response({'message':'Car is Already Booked'},status=400)
         car.booked = True
         car.save()
 
@@ -47,6 +55,7 @@ def book_car(request,id):
         booking.car = car
         booking.user = request.user
         booking.address = data['address']
+        booking.mobile_no = data['mobile_no']
         booking.save()
         return Response({'message':'Car Booked'},status=200)
     except:
@@ -57,10 +66,12 @@ def book_car(request,id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def booking_paid(request,id):
+    data = request.data
     booking = Booking.objects.get(id=id)
     if request.user.is_driver:
         booking.car.car_driver = request.user
         booking.is_paid = True
+        booking.price = data['price']
         booking.save()
         return Response({"message":"Booking is paid Succesfully"},status=200)
     else:
@@ -112,3 +123,45 @@ def get_my_bookings(request):
     booking = Booking.objects.filter(user=request.user)
     serializer = BookingSerializer(booking,many=True)
     return Response(serializer.data)
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def createProductReview(request, pk):
+    user = request.user
+    car = Cars.objects.get(id=pk)
+    data = request.data
+    print(data)
+    # 1 - Review already exists
+    alreadyExists = car.car_review.filter(user=user).exists()
+    if alreadyExists:
+        content = {'detail': 'Product already reviewed'}
+        return Response(content, status=400)
+
+    # 2 - No Rating or 0
+    elif data['rating'] == 0:
+        content = {'detail': 'Please select a rating'}
+        return Response(content, status=400)
+
+    # 3 - Create review
+    else:
+        review = Reviews.objects.create(
+            user=user,
+            car=car,
+            name=user.first_name,
+            rating=data['rating'],
+            comment=data['comment'],
+        )
+
+        reviews = car.car_review.all()
+        car.numReviews = len(reviews)
+
+        total = 0
+        for i in reviews:
+            total += i.rating
+
+        car.rating = total / len(reviews)
+        car.save()
+
+        return Response('Review Added')

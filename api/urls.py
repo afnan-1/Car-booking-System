@@ -12,5 +12,6 @@ urlpatterns = [
          name='token_obtain_pair'),
     path('register/', registerUser, name='register'),
     path('my-bookings/',get_my_bookings),
-    path('car-detail/<int:id>/',car_details)
+    path('car-detail/<int:id>/',car_details),
+    path('car/reviews/add/<int:pk>/',createProductReview)
 ]
