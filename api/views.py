@@ -14,40 +14,41 @@ from django.db.models import Q
 
 # Create your views here.
 
+
 @api_view(['GET'])
-def car_details(request,id):
+def car_details(request, id):
     car = Cars.objects.get(id=id)
-    serializer = CarSerializer(car,many=False)
+    serializer = CarSerializer(car, many=False)
     return Response(serializer.data)
 
 
-
-@api_view(['GET',])
+@api_view(['GET', ])
 def list_cars(request):
     query = request.query_params.get('keyword')
     if query == None:
         query = ''
-
+    
     cars = Cars.objects.filter(
-       Q(name__icontains=query)|Q(city__icontains=query), booked=False).order_by('-created_at')
-    serializer = CarSerializer(cars,many=True)  
+        Q(name__icontains=query) | Q(city__icontains=query), booked=False).order_by('-created_at')
+    serializer = CarSerializer(cars, many=True)
     return Response(serializer.data)
 
 
-@api_view(['GET',])
+@api_view(['GET', ])
 def list_cars_available(request):
     cars = Cars.objects.filter(booked=False)
     serializer = CarSerializer(cars, many=True)
     return Response(serializer.data)
 
-@api_view(['POST',])
+
+@api_view(['POST', ])
 @permission_classes([IsAuthenticated])
-def book_car(request,id):
+def book_car(request, id):
     try:
         data = request.data
         car = Cars.objects.get(id=id)
         if car.booked:
-            return Response({'message':'Car is Already Booked'},status=400)
+            return Response({'message': 'Car is Already Booked'}, status=400)
         car.booked = True
         car.save()
 
@@ -57,15 +58,14 @@ def book_car(request,id):
         booking.address = data['address']
         booking.mobile_no = data['mobile_no']
         booking.save()
-        return Response({'message':'Car Booked'},status=200)
+        return Response({'message': 'Car Booked'}, status=200)
     except:
-        return Response({"message":"Car is Already Booked"},status=400)
-
+        return Response({"message": "Car is Already Booked"}, status=400)
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def booking_paid(request,id):
+def booking_paid(request, id):
     data = request.data
     booking = Booking.objects.get(id=id)
     if request.user.is_driver:
@@ -73,12 +73,9 @@ def booking_paid(request,id):
         booking.is_paid = True
         booking.price = data['price']
         booking.save()
-        return Response({"message":"Booking is paid Succesfully"},status=200)
+        return Response({"message": "Booking is paid Succesfully"}, status=200)
     else:
-        return Response({"message":"You are not driver"},status=400)
-
-
-
+        return Response({"message": "You are not driver"}, status=400)
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -94,7 +91,6 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
-
 
 
 @api_view(['POST'])
@@ -121,9 +117,8 @@ def registerUser(request):
 @permission_classes([IsAuthenticated])
 def get_my_bookings(request):
     booking = Booking.objects.filter(user=request.user)
-    serializer = BookingSerializer(booking,many=True)
+    serializer = BookingSerializer(booking, many=True)
     return Response(serializer.data)
-
 
 
 @api_view(['POST'])
